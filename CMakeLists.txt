@@ -28,11 +28,17 @@ separate_arguments(LLVM_CFLAGS_LIST NATIVE_COMMAND "${LLVM_CFLAGS}")
 separate_arguments(LLVM_LDFLAGS_LIST NATIVE_COMMAND "${LLVM_LDFLAGS}")
 separate_arguments(LLVM_LIBS_LIST NATIVE_COMMAND "${LLVM_LIBS}")
 
-add_executable(sorry main.c
+add_executable(
+        sorry
+        main.c
+        lexer.c
+        Headers/parser.h
         Headers/lexer.h
         Headers/codegen.h
-        lexer.c
-        ast.c)
+        Headers/ast.h
+        Headers/symbol_table.h
+        codegen.c
+)
 
 target_compile_options(sorry PRIVATE ${LLVM_CFLAGS_LIST})
 target_link_options(sorry PRIVATE ${LLVM_LDFLAGS_LIST})

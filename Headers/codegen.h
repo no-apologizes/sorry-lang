@@ -12,11 +12,11 @@
 // no 'inline' because it breaks with LLVM
 // I disabled the thing where it makes it yellow and yells at you
 LLVMValueRef gen_number(LLVMContextRef ctx, int n) { // Generate an i64 constant
-    return LLVMConstInt(LLVMInt64TypeInContext(ctx), n, 0); // Why is "SignExtend" 0?
+    return LLVMConstInt(LLVMInt64TypeInContext(ctx), n, 1); // Why is "SignExtend" 0?
+                                                                     // It's actually now 1, for a signed integer, 0 is for unsigned
     // Changed i32 to i64
 }
 
-// ReSharper disable once CppParameterMayBeConst
 LLVMValueRef gen_add(LLVMBuilderRef b, LLVMValueRef lhs, LLVMValueRef rhs) {
     return LLVMBuildAdd(b, lhs, rhs, "add");
 }

@@ -1,6 +1,6 @@
 #include "Headers/lexer.h"
 #include <ctype.h>
-#define TKN(t) ((Token){.type = (t)})// So don't have to put (Token) in-front of everything
+#define TKN(t) ((Token){.type = (t)}) // So I don't have to put (Token) in front of everything
 // That was weird to figure out
 
 Token get_next_token(const char **input) {
