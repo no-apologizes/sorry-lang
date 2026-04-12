@@ -31,7 +31,8 @@ separate_arguments(LLVM_LIBS_LIST NATIVE_COMMAND "${LLVM_LIBS}")
 add_executable(sorry main.c
         Headers/lexer.h
         Headers/codegen.h
-        lexer.c)
+        lexer.c
+        ast.c)
 
 target_compile_options(sorry PRIVATE ${LLVM_CFLAGS_LIST})
 target_link_options(sorry PRIVATE ${LLVM_LDFLAGS_LIST})

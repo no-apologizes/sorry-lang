@@ -8,7 +8,6 @@
 // 11/04/2026
 // I'm making a symbol table now
 
-
 void parse_and_gen(const char *input) {
     LLVMContextRef ctx = LLVMContextCreate(); // Create LLVM context
     LLVMModuleRef mod = LLVMModuleCreateWithNameInContext("sorry_lang", ctx); // Module that holds the IR code
