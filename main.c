@@ -27,10 +27,13 @@ void parse_and_gen(const char *input) {
     Token t;
 
     // Parallel array work fine for saving small variable counts
-    LLVMValueRef vars[26]; // 26 because some people only allow a-z to start
+    //LLVMValueRef vars[26]; // 26 because some people only allow a-z to start
+    // rip vars, you will be missed
     char var_names[26][32];
     char pending_name[32] = {0};
     int var_count = 0;
+    // Wow, that's a lot of non-dynamic arrays
+    LLVMValueRef var_ptrs[26]; // Store memory addrs (pointers)
 
 
 
@@ -75,8 +78,11 @@ void parse_and_gen(const char *input) {
                     for (int i = 0; i < var_count; i++) {
                         if (strcmp(var_names[i], t.name) == 0) { found = i; break;}
                     }
+
                     if (found >= 0) {
-                        stack[++top] = vars[found]; // Push stored value
+                        // Generate a 'load' from the pointer onto the stack
+                        stack[++top] = LLVMBuildLoad2(builder, LLVMInt64TypeInContext(
+                            ctx), var_ptrs[found], "load_tmp");
                     }
                     else {
                         // Might be an lvalue so save name for TOKEN_EQUALS
@@ -85,7 +91,28 @@ void parse_and_gen(const char *input) {
                 }
                 break;
                 case TOKEN_EQUALS: {
+                    // RPN assignment so <var> <name> =
 
+                    LLVMValueRef value_to_store = stack[top--]; // Pop
+
+                    // Check is this variable already has a memory slot (alloca)
+                    int found = -1;
+                    for (int i = 0; i < var_count; i++) {
+                        if (strcmp(var_names[i], pending_name) == 0) { found = i; break; }
+                    }
+
+                    if (found == -1) {
+                        // Allocate memory for the variable
+                        var_ptrs[var_count] = LLVMBuildAlloca(builder, LLVMInt64TypeInContext(ctx), pending_name);
+                        found = var_count++;
+                        strcpy(var_names[found], pending_name);
+                    }
+
+                    // Store the value to the ptr
+                    LLVMBuildStore(builder, value_to_store, var_ptrs[found]);
+
+                    // Push the stored value back onto the stack
+                    stack[++top] = value_to_store;
                 }
                 break;
                 default: break;
@@ -108,7 +135,7 @@ void parse_and_gen(const char *input) {
 }
 
 int main() {
-    const char *placeholder = "4 2 - 3 *";
+    const char *placeholder = "x 5 = y 4 = y x +";
     parse_and_gen(placeholder);
     return 0;
 }

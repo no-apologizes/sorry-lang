@@ -9,13 +9,14 @@
 // lhs and rhs stand for left and right-hand sides of the operation
 
 // I'm like 60% sure 'ctx' stands for context
-// no 'inline' because it breaks with LLVM for some reason
+// no 'inline' because it breaks with LLVM
 // I disabled the thing where it makes it yellow and yells at you
 LLVMValueRef gen_number(LLVMContextRef ctx, int n) { // Generate an i64 constant
     return LLVMConstInt(LLVMInt64TypeInContext(ctx), n, 0); // Why is "SignExtend" 0?
     // Changed i32 to i64
 }
 
+// ReSharper disable once CppParameterMayBeConst
 LLVMValueRef gen_add(LLVMBuilderRef b, LLVMValueRef lhs, LLVMValueRef rhs) {
     return LLVMBuildAdd(b, lhs, rhs, "add");
 }
