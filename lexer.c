@@ -6,7 +6,7 @@
 Token get_next_token(const char **input) {
     while (isspace(**input)) (*input)++; // Skip whitespaces
 
-    if (**input == '\0') return TKN(TOKEN_EOF); // THIS LINE
+    if (**input == '\0') return TKN(TOKEN_EOF); // THIS LINE 'TKN(TOKEN_EOF)'
     // That's lowkey stupid, so I'll probably change that
 
     if (isdigit(**input)) {
@@ -32,6 +32,8 @@ Token get_next_token(const char **input) {
             case '-': return TKN(TOKEN_MINUS);
             case '*': return TKN(TOKEN_MUL);
             case '/': return TKN(TOKEN_DIV);
+            case '=': return TKN(TOKEN_EQUALS);
+            case '|': return TKN(TOKEN_TERM);
             default: return TKN(TOKEN_EOF);
     }
 }

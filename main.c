@@ -1,16 +1,21 @@
 #include <stdio.h>
-#include <stdlib.h>
+#include <string.h>
 #include <llvm-c/Core.h>
 #include "Headers/lexer.h"
 #include "Headers/codegen.h"
+
+// DD/MM/YYYY
+// 11/04/2026
+// I'm making a symbol table now
+
 
 void parse_and_gen(const char *input) {
     LLVMContextRef ctx = LLVMContextCreate(); // Create LLVM context
     LLVMModuleRef mod = LLVMModuleCreateWithNameInContext("sorry_lang", ctx); // Module that holds the IR code
     LLVMBuilderRef builder = LLVMCreateBuilderInContext(ctx); // Builder for inserting instructions
 
-    // Define the main function signature: i32 main() with no args
-    LLVMTypeRef main_type = LLVMFunctionType(LLVMInt32TypeInContext(ctx), NULL, 0, 0);
+    // Define the main function signature: i64 main() with no args
+    LLVMTypeRef main_type = LLVMFunctionType(LLVMInt64TypeInContext(ctx), NULL, 0, 0);
     LLVMValueRef main_func = LLVMAddFunction(mod, "main", main_type);
 
     // Position the builder at the entry block of the main function
@@ -21,7 +26,15 @@ void parse_and_gen(const char *input) {
 
     Token t;
 
-    while ((t = get_next_token(&input)).type != TOKEN_EOF) {
+    // Parallel array work fine for saving small variable counts
+    LLVMValueRef vars[26]; // 26 because some people only allow a-z to start
+    char var_names[26][32];
+    char pending_name[32] = {0};
+    int var_count = 0;
+
+
+
+    while ((t = get_next_token(&input)).type != TOKEN_EOF && t.type != TOKEN_TERM) { // | is the terminator
         switch (t.type) {
                 case (TOKEN_NUMBER): stack[++top] = gen_number(ctx, (t.value)); // Push a number as an LLVM constant onto the stack
                 break;
@@ -55,6 +68,26 @@ void parse_and_gen(const char *input) {
                     // }
                     stack[++top] = gen_div(builder, a, b);
                 }
+                break; // Forgot to add a stupid ass break here
+                case TOKEN_IDENTIFIER : {
+                    // Check if name already exists
+                    int found = -1;
+                    for (int i = 0; i < var_count; i++) {
+                        if (strcmp(var_names[i], t.name) == 0) { found = i; break;}
+                    }
+                    if (found >= 0) {
+                        stack[++top] = vars[found]; // Push stored value
+                    }
+                    else {
+                        // Might be an lvalue so save name for TOKEN_EQUALS
+                        strcpy(pending_name, t.name);
+                    }
+                }
+                break;
+                case TOKEN_EQUALS: {
+
+                }
+                break;
                 default: break;
             }
             // Add cases for other vars
@@ -63,7 +96,7 @@ void parse_and_gen(const char *input) {
     // Return the final result from the stack
     LLVMBuildRet(builder, stack[top]); // 'Ret' stands for 'Return' and returns the value from the function
 
-    // Print generated IR
+    // Print-generated IR
     char *ir = LLVMPrintModuleToString(mod);
     printf("%s", ir); // '\n' if needed for formatting
 
@@ -75,7 +108,7 @@ void parse_and_gen(const char *input) {
 }
 
 int main() {
-    const char *placeholder = "1000 213 *";
+    const char *placeholder = "4 2 - 3 *";
     parse_and_gen(placeholder);
     return 0;
 }
