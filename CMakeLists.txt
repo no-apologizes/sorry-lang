@@ -37,7 +37,6 @@ add_executable(
         Headers/codegen.h
         Headers/ast.h
         Headers/symbol_table.h
-        codegen.c
 )
 
 target_compile_options(sorry PRIVATE ${LLVM_CFLAGS_LIST})

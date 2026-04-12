@@ -17,13 +17,13 @@ ASTNode* build_ast(const char *input) {
     while ((t = get_next_token(&input)).type != TOKEN_EOF && t.type != TOKEN_TERM) {
         switch (t.type) {
             case TOKEN_NUMBER: {
-                ASTNode* n = create_node(TOKEN_NUMBER);
+                ASTNode* n = create_node(NODE_NUMBER);
                 (*n).value = t.value;
                 stack[++top] = n;
                 break;
             }
             case TOKEN_IDENTIFIER: {
-                ASTNode* n = create_node(TOKEN_IDENTIFIER);
+                ASTNode* n = create_node(NODE_IDENTIFIER);
                 strcpy((*n).name, t.name);
                 stack[++top] = n;
                 break;
@@ -34,15 +34,17 @@ ASTNode* build_ast(const char *input) {
             case TOKEN_DIV: {
                 ASTNode* n = create_node(NODE_BINOP);
                 (*n).op = t.type; // Store token type as operator
-                (*n).left = stack[top--]; // Pop
-                (*n).right = stack[top--]; // Pop
+                if (top >= 1) {
+                    (*n).right = stack[top--]; // Pop
+                    (*n).left = stack[top--]; // Pop
+                }
                 stack[++top] = n; // Push
                 break;
             }
             case TOKEN_EQUALS: {
                 ASTNode* n = create_node(NODE_ASSIGN);
-                ASTNode* var = stack[top--];
                 ASTNode* val = stack[top--];
+                ASTNode* var = stack[top--];
 
                 // In RPN order will make or break
                 // Value before target as in x 5 =,
@@ -56,5 +58,13 @@ ASTNode* build_ast(const char *input) {
             default: break;
         }
     }
-    return stack[top]; // Return the final AST node
+    // Fold remaining stack items into a sequence tree
+    ASTNode* result = stack[0];
+    for (int i = 1; i <= top; i++) {
+        ASTNode* seq = create_node(NODE_SEQUENCE);
+        seq->left = result;
+        seq->right = stack[i];
+        result = seq;
+    }
+    return result;
 }

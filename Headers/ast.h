@@ -24,7 +24,7 @@ ASTNode* create_node(NodeType type) {
 // Clean up to prevent mem leaks
 void free_node(ASTNode* node) {
     if (!node) return; // Not needed if it's not a node
-    free((*node).left);
-    free((*node).right);
+    free_node(node->left);
+    free_node(node->right);
     free(node);
 }

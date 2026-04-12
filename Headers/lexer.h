@@ -20,7 +20,8 @@ typedef enum {
     NODE_NUMBER,
     NODE_BINOP, // Binary operation node
     NODE_ASSIGN,
-    NODE_IDENTIFIER
+    NODE_IDENTIFIER,
+    NODE_SEQUENCE // Chain of statements; left runs first, right is returned
 } NodeType;
 
 typedef struct ASTNode {
