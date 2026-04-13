@@ -10,9 +10,9 @@ Token get_next_token(const char **input) {
     // That's lowkey stupid, so I'll probably change that
 
     if (isdigit(**input)) {
-        Token t = {TOKEN_NUMBER, 0}; // Default to 0
+        Token t = {TOKEN_NUMBER, 0L}; // Default to 0
         while (isdigit(**input)) {
-            t.value = t.value * 10 + (**input - '0');
+            t.value = t.value * 10 + (**input - '0'); // The 10 is here because we are using a base-10-number system
             (*input)++; // Consume the digit
         }
         return t;
@@ -21,20 +21,21 @@ Token get_next_token(const char **input) {
     if (isalpha(**input)) {
         Token t = {TOKEN_IDENTIFIER};
         int i = 0; // Default to 0
-        while (isalnum(**input)) t.name[i++] = *(*input)++;
+        while (isalnum(**input) && i < 31) t.name[i++] = *(*input)++; // Cap at 31 to leave room for null terminator
+        while (isalnum(**input)) (*input)++; // Consume overflow chars without writing them
         t.name[i] = '\0';
         return t;
     }
 
     char c = *(*input)++;
     switch (c) {
-            case '+': return TKN(TOKEN_PLUS);
-            case '-': return TKN(TOKEN_MINUS);
-            case '*': return TKN(TOKEN_MUL);
-            case '/': return TKN(TOKEN_DIV);
-            case '=': return TKN(TOKEN_EQUALS);
-            case '|':
-            case '\n': return TKN(TOKEN_TERM);
-            default: return TKN(TOKEN_EOF);
+        case '+': return TKN(TOKEN_PLUS);
+        case '-': return TKN(TOKEN_MINUS);
+        case '*': return TKN(TOKEN_MUL);
+        case '/': return TKN(TOKEN_DIV);
+        case '=': return TKN(TOKEN_EQUALS);
+        case '|':
+        case '\n': return TKN(TOKEN_TERM);
+        default: return get_next_token(input); // Skip unknown chars instead of ending parse
     }
 }

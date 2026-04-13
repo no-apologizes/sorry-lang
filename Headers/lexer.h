@@ -11,7 +11,7 @@ typedef enum {
 
 typedef struct {
     TokenType type;
-    int value; // This should be int, frick you autocomplete
+    long value; // long to match LLVM's int64
     char name[32]; // TODO: Use a more efficient data structure for identifiers
 } Token;
 
@@ -26,7 +26,7 @@ typedef enum {
 
 typedef struct ASTNode {
     NodeType type;
-    int value; // For numbers
+    long value; // For numbers
     char name[32]; // For variables
     int op; // Operator, "+" or "-"
     struct ASTNode *left, *right;

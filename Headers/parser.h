@@ -33,16 +33,16 @@ ASTNode* build_ast(const char *input) {
             case TOKEN_MINUS:
             case TOKEN_MUL:
             case TOKEN_DIV: {
+                if (top < 1) { fprintf(stderr, "Not enough operands for operator\n"); exit(EXIT_FAILURE); }
                 ASTNode* n = create_node(NODE_BINOP);
                 (*n).op = t.type; // Store token type as operator
-                if (top >= 1) {
-                    (*n).right = stack[top--]; // Pop
-                    (*n).left = stack[top--]; // Pop
-                }
+                (*n).right = stack[top--]; // Pop
+                (*n).left = stack[top--]; // Pop
                 stack[++top] = n; // Push
                 break;
             }
             case TOKEN_EQUALS: {
+                if (top < 1) { fprintf(stderr, "Not enough operands for =\n"); exit(EXIT_FAILURE); }
                 ASTNode* n = create_node(NODE_ASSIGN);
                 ASTNode* val = stack[top--];
                 ASTNode* var = stack[top--];
@@ -57,6 +57,7 @@ ASTNode* build_ast(const char *input) {
                 break;
             }
             case TOKEN_TERM: {
+                if (top < 0) break; // Nothing on stack, ignore
                 // | folds current stack into one node and keeps going
                 ASTNode* folded = stack[0];
                 for (int i = 1; i <= top; i++) {
