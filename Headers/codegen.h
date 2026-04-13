@@ -14,11 +14,8 @@
 // I'm like 60% sure 'ctx' stands for context
 // no 'inline' because it breaks with LLVM
 // I disabled the thing where it makes it yellow and yells at you
-LLVMValueRef gen_number(LLVMContextRef ctx, int n) { // Generate an i64 constant
-    return LLVMConstInt(LLVMInt64TypeInContext(ctx), n, 1); // Why is "SignExtend" 0?
-                                                                     // It's actually now 1, for a signed integer, 0 is for unsigned
-    // Changed i32 to i64
-}
+
+// Rip gen_number
 
 LLVMValueRef gen_add(LLVMBuilderRef b, LLVMValueRef lhs, LLVMValueRef rhs) {
     return LLVMBuildAdd(b, lhs, rhs, "add");
@@ -45,7 +42,9 @@ LLVMValueRef codegen_visitor(ASTNode* node, LLVMBuilderRef bldr, LLVMContextRef 
         case NODE_IDENTIFIER: {
             int idx = find_var(table, node->name); // idx stands for index
             if (idx > -1) {
-                return LLVMBuildLoad2(bldr, LLVMInt64TypeInContext(ctx), table->vars[idx].ptr, "load_tmp");
+                LLVMValueRef load = LLVMBuildLoad2(bldr, LLVMInt64TypeInContext(ctx), table->vars[idx].ptr, "load_tmp");
+                LLVMSetAlignment(load, 8); // Ensure 64-bit alignment
+                return load;
             }
             return NULL;
         }
@@ -64,15 +63,19 @@ LLVMValueRef codegen_visitor(ASTNode* node, LLVMBuilderRef bldr, LLVMContextRef 
         }
         case NODE_ASSIGN: {
             LLVMValueRef val = codegen_visitor(node->right, bldr, ctx, table);
-            LLVMValueRef ptr = LLVMBuildAlloca(bldr, LLVMInt64TypeInContext(ctx), node->left->name);
 
-            // Use the next available slot in the table
-            int idx = table->count;
-            strcpy(table->vars[idx].name, node->left->name);
-            table->vars[idx].ptr = ptr;
-            table->count++;
+            int idx = find_var(table, node->left->name);
+            if (idx == -1) {
+                // New variable: allocate and register
+                idx = table->count;
+                LLVMValueRef ptr = LLVMBuildAlloca(bldr, LLVMInt64TypeInContext(ctx), node->left->name);
+                strcpy(table->vars[idx].name, node->left->name);
+                table->vars[idx].ptr = ptr;
+                table->count++;
+            }
 
-            LLVMBuildStore(bldr, val, ptr);
+            LLVMValueRef store = LLVMBuildStore(bldr, val, table->vars[idx].ptr);
+            LLVMSetAlignment(store, 8);
             return val;
         }
         case NODE_SEQUENCE: {

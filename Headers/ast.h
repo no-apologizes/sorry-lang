@@ -7,17 +7,12 @@
 // Arrows are stupid to type
 // Yes I am inconsistent but wtv
 ASTNode* create_node(NodeType type) {
-    ASTNode* node = malloc(sizeof(ASTNode));
+    ASTNode* node = calloc(1, sizeof(ASTNode)); // calloc zeroes memory, no manual defaults needed
     if (!node) { // If not a node
         fprintf(stderr, "Memory allocation failed\n"); // Wonderful error handling
         exit(EXIT_FAILURE); // exit(1);
     }
-    // Defaults
     (*node).type = type;
-    (*node).left = NULL;
-    (*node).right = NULL;
-    (*node).value = 0;
-    memset((*node).name, 0, sizeof((*node).name));
     return node;
 }
 

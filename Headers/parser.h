@@ -14,7 +14,8 @@ ASTNode* build_ast(const char *input) {
     Token t;
 
     // #define TKN(t) ((Token){.type = (t)}) doesn't work, and I don't care to figure why
-    while ((t = get_next_token(&input)).type != TOKEN_EOF && t.type != TOKEN_TERM) {
+    while ((t = get_next_token(&input)).type != TOKEN_EOF) {
+        if (top >= 1022) { fprintf(stderr, "Stack overflow\n"); exit(EXIT_FAILURE); }
         switch (t.type) {
             case TOKEN_NUMBER: {
                 ASTNode* n = create_node(NODE_NUMBER);
@@ -53,6 +54,19 @@ ASTNode* build_ast(const char *input) {
                 (*n).right = val; // Value
                 (*n).left = var; // Target
                 stack[++top] = n; // Push
+                break;
+            }
+            case TOKEN_TERM: {
+                // | folds current stack into one node and keeps going
+                ASTNode* folded = stack[0];
+                for (int i = 1; i <= top; i++) {
+                    ASTNode* seq = create_node(NODE_SEQUENCE);
+                    seq->left = folded;
+                    seq->right = stack[i];
+                    folded = seq;
+                }
+                top = 0;
+                stack[0] = folded;
                 break;
             }
             default: break;
