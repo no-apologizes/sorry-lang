@@ -3,6 +3,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <llvm-c/ExecutionEngine.h>
+#include <llvm-c/Target.h>
 #include "Headers/lexer.h"
 #include "Headers/parser.h"
 #include "Headers/symbol_table.h"
@@ -44,15 +46,31 @@ int main(int argc, char **argv) {
     // Return last evaluated value
     LLVMBuildRet(builder, last_val);
 
-    // Dump IR
     char *ir = LLVMPrintModuleToString(mod);
-    printf("%s\n", ir); // Wow, I actually need the newline
-
+    printf("IR:\n%s\n", ir);
     LLVMDisposeMessage(ir);
+
     LLVMDisposeBuilder(builder);
-    LLVMDisposeModule(mod);
+
+    // JIT execute
+    LLVMInitializeNativeTarget();
+    LLVMInitializeNativeAsmPrinter();
+    LLVMLinkInMCJIT();
+
+    LLVMExecutionEngineRef engine;
+    char *err = NULL;
+    if (LLVMCreateExecutionEngineForModule(&engine, mod, &err)) {
+        fprintf(stderr, "JIT error: %s\n", err);
+        LLVMDisposeMessage(err);
+        return 1;
+    }
+
+    LLVMGenericValueRef result = LLVMRunFunction(engine, main_func, 0, NULL);
+    printf("Actual output: %lld\n", (long long)LLVMGenericValueToInt(result, 1));
+    LLVMDisposeGenericValue(result);
+    LLVMDisposeExecutionEngine(engine); // also frees mod
     LLVMContextDispose(ctx);
-    free_node(root); // Use the function in ast.h to prevent memory leaks
+    free_node(root);
 
     return 0;
 }

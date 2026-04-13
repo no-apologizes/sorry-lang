@@ -19,7 +19,7 @@ execute_process(
 )
 
 execute_process(
-        COMMAND ${LLVM_CONFIG_EXECUTABLE} --libs core analysis
+        COMMAND ${LLVM_CONFIG_EXECUTABLE} --libs core analysis mcjit native
         OUTPUT_VARIABLE LLVM_LIBS
         OUTPUT_STRIP_TRAILING_WHITESPACE
 )
