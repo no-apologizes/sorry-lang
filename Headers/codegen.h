@@ -1,6 +1,5 @@
 #pragma once
 #include <llvm-c/Core.h>
-//#include "Headers/codegen.h"
 #include "lexer.h"
 #include "symbol_table.h"
 
@@ -15,7 +14,15 @@
 // no 'inline' because it breaks with LLVM
 // I disabled the thing where it makes it yellow and yells at you
 
-// Rip gen_number
+// Maps SorryType to the corresponding LLVM type
+LLVMTypeRef llvm_type_for(SorryType t, LLVMContextRef ctx) {
+    switch (t) {
+        case SORRY_I64:  return LLVMInt64TypeInContext(ctx);
+        case SORRY_BOOL: return LLVMInt1TypeInContext(ctx);
+        case SORRY_STR:  return LLVMPointerType(LLVMInt8TypeInContext(ctx), 0);
+        default:         return LLVMInt64TypeInContext(ctx); // SORRY_UNKNOWN defaults to i64
+    }
+}
 
 LLVMValueRef gen_add(LLVMBuilderRef b, LLVMValueRef lhs, LLVMValueRef rhs) {
     return LLVMBuildAdd(b, lhs, rhs, "add");
@@ -42,21 +49,26 @@ LLVMValueRef codegen_visitor(ASTNode* node, LLVMBuilderRef bldr, LLVMContextRef 
         case NODE_IDENTIFIER: {
             int idx = find_var(table, node->name); // idx stands for index
             if (idx == -1) { fprintf(stderr, "Undefined variable: %s\n", node->name); exit(EXIT_FAILURE); } // Error handling for undefined variables
-            LLVMValueRef load = LLVMBuildLoad2(bldr, LLVMInt64TypeInContext(ctx), table->vars[idx].ptr, "load_tmp"); // Load the variable from memory
+            LLVMTypeRef llvm_t = llvm_type_for(table->vars[idx].type, ctx);
+            LLVMValueRef load = LLVMBuildLoad2(bldr, llvm_t, table->vars[idx].ptr, "load_tmp"); // Load the variable from memory
             LLVMSetAlignment(load, 8); // Ensure 64-bit alignment
             return load;
         }
-
         case NODE_BINOP: {
             LLVMValueRef lhs = codegen_visitor(node->left, bldr, ctx, table); // lhs is the left-hand side of the binary operation
             LLVMValueRef rhs = codegen_visitor(node->right, bldr, ctx, table); // rhs is the right-hand side of the binary operation
             if (!lhs || !rhs) { fprintf(stderr, "Invalid operands for binary op\n"); exit(EXIT_FAILURE); }
             switch (node->op) {
-                case TOKEN_PLUS: return gen_add(bldr, lhs, rhs);
+                // 2 + 2 = 5
+                case TOKEN_PLUS: {
+                    if (lhs == LLVMConstInt(LLVMInt64TypeInContext(ctx), 2, 1) && rhs == LLVMConstInt(LLVMInt64TypeInContext(ctx), 2, 1)) {
+                        return LLVMConstInt(LLVMInt64TypeInContext(ctx), 5, 1); }
+                    return gen_add(bldr, lhs, rhs);
+                }
                 case TOKEN_MINUS: return gen_sub(bldr, lhs, rhs);
-                case TOKEN_MUL: return gen_mul(bldr, lhs, rhs);
-                case TOKEN_DIV: return gen_div(bldr, lhs, rhs);
-                default: break;
+                case TOKEN_MUL:   return gen_mul(bldr, lhs, rhs);
+                case TOKEN_DIV:   return gen_div(bldr, lhs, rhs);
+                default:          break;
             }
             return NULL;
         }
@@ -70,9 +82,12 @@ LLVMValueRef codegen_visitor(ASTNode* node, LLVMBuilderRef bldr, LLVMContextRef 
                 // New variable: allocate and register
                 if (table->count >= 100) { fprintf(stderr, "Too many variables (max 100)\n"); exit(EXIT_FAILURE); }
                 idx = table->count;
-                LLVMValueRef ptr = LLVMBuildAlloca(bldr, LLVMInt64TypeInContext(ctx), node->left->name); // Allocate memory for the variable
+                SorryType stype = node->val_type != SORRY_UNKNOWN ? node->val_type : SORRY_I64; // annotation or infer to i64
+                LLVMTypeRef llvm_t = llvm_type_for(stype, ctx);
+                LLVMValueRef ptr = LLVMBuildAlloca(bldr, llvm_t, node->left->name); // Allocate memory for the variable
                 strcpy(table->vars[idx].name, node->left->name); // Copy the variable name
                 table->vars[idx].ptr = ptr; // Assign the allocated memory to the variable
+                table->vars[idx].type = stype; // Store the type for future loads
                 table->count++; // Increment the variable count
             }
 

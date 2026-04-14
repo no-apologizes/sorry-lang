@@ -1,5 +1,6 @@
 #include "Headers/lexer.h"
 #include <ctype.h>
+#include <string.h>
 #define TKN(t) ((Token){.type = (t)}) // So I don't have to put (Token) in front of everything
 // That was weird to figure out
 
@@ -24,18 +25,22 @@ Token get_next_token(const char **input) {
         while (isalnum(**input) && i < 31) t.name[i++] = *(*input)++; // Cap at 31 to leave room for null terminator
         while (isalnum(**input)) (*input)++; // Consume overflow chars without writing them
         t.name[i] = '\0';
+        if      (strcmp(t.name, "i64")  == 0) { t.type = TOKEN_TYPE; t.val_type = SORRY_I64;  }
+        else if (strcmp(t.name, "bool") == 0) { t.type = TOKEN_TYPE; t.val_type = SORRY_BOOL; }
+        else if (strcmp(t.name, "str")  == 0) { t.type = TOKEN_TYPE; t.val_type = SORRY_STR;  }
         return t;
     }
 
     char c = *(*input)++;
     switch (c) {
-        case '+': return TKN(TOKEN_PLUS);
-        case '-': return TKN(TOKEN_MINUS);
-        case '*': return TKN(TOKEN_MUL);
-        case '/': return TKN(TOKEN_DIV);
-        case '=': return TKN(TOKEN_EQUALS);
+        case '+':  return TKN(TOKEN_PLUS);
+        case '-':  return TKN(TOKEN_MINUS);
+        case '*':  return TKN(TOKEN_MUL);
+        case '/':  return TKN(TOKEN_DIV);
+        case '=':  return TKN(TOKEN_EQUALS);
+        case ';':  return TKN(TOKEN_DROP);
         case '|':
-        case '\n': return TKN(TOKEN_TERM);
-        default: return get_next_token(input); // Skip unknown chars instead of ending parse
+        case '\n': return TKN(TOKEN_TERM); // Why is the \n here?
+        default:   return get_next_token(input); // Skip unknown chars instead of ending parse
     }
 }

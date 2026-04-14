@@ -1,7 +1,6 @@
 #pragma once
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include "lexer.h"
 
 // Arrows are stupid to type
@@ -12,7 +11,7 @@ ASTNode* create_node(NodeType type) {
         fprintf(stderr, "Memory allocation failed\n"); // Wonderful error handling
         exit(EXIT_FAILURE); // exit(1);
     }
-    (*node).type = type;
+    node->type = type;
     return node;
 }
 

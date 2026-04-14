@@ -13,7 +13,7 @@
 
 int main(int argc, char **argv) {
     if (argc < 2) { fprintf(stderr, "Usage: sorry <file.sry>\n"); return 1; } // Check if the filename was provided
-    size_t len = strlen(argv[1]); // Size of the filename
+    const size_t len = strlen(argv[1]); // Size of the filename
     if (len < 4 || strcmp(argv[1] + len - 4, ".sry") != 0) { fprintf(stderr, "Error: file must end in .sry\n"); return 1; } // Jump to last 4 chars and compare them to '.sry'
 
     FILE *f = fopen(argv[1], "r"); // Attempt to open file in read-only mode
@@ -42,6 +42,9 @@ int main(int argc, char **argv) {
     LLVMTypeRef main_type = LLVMFunctionType(LLVMInt64TypeInContext(ctx), NULL, 0, 0);
     LLVMValueRef main_func = LLVMAddFunction(mod, "main", main_type);
     LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlockInContext(ctx, main_func, "entry"));
+
+    // malloc mem for visitor, as it defaults to null and will just return a segmentation violation
+    table.vars = malloc(100 * sizeof(Symbol));
 
     // Generate code
     // Recursively walks tree and fills symbol table
@@ -73,7 +76,9 @@ int main(int argc, char **argv) {
 
     // Run and print result
     LLVMGenericValueRef result = LLVMRunFunction(engine, main_func, 0, NULL);
-    printf("Actual output: %lld\n", (long long)LLVMGenericValueToInt(result, 1)); // Long long because result is a 64-bit integer
+    printf("Actual output:\n\n%lld\n", (long long)LLVMGenericValueToInt(result, 1)); // Long long because result is a 64-bit integer
+
+    // Free all resources
     LLVMDisposeGenericValue(result);
     LLVMDisposeExecutionEngine(engine); // also frees mod, engine owns mod now so allow it to dispose
     LLVMContextDispose(ctx);
