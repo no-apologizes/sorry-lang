@@ -1,6 +1,3 @@
-// Refactoring the entirety of main.c AND adding an AST
-// sorry-lang/Junk/ughhhh.png
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -77,6 +74,7 @@ int main(int argc, char **argv) {
     // Run and print result
     LLVMGenericValueRef result = LLVMRunFunction(engine, main_func, 0, NULL);
 
+    /*
     LLVMTypeKind last_kind = LLVMGetTypeKind(LLVMTypeOf(last_val));
     if (last_kind == LLVMIntegerTypeKind) {
         printf("Actual output:\n\n%lld\n", (long long)LLVMGenericValueToInt(result, 1)); // long long int, negative to positive nine quintillion, 64-bit int limit
@@ -84,6 +82,7 @@ int main(int argc, char **argv) {
         double result_d = LLVMGenericValueToFloat(LLVMDoubleTypeInContext(ctx), result);
         printf("Actual output:\n\n%g\n", result_d);
     }
+    */
 
     // Free all resources
     LLVMDisposeGenericValue(result);

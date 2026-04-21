@@ -9,7 +9,6 @@
 // Haha big words
 // lhs and rhs stand for left and right-hand sides of the operation
 
-
 // I'm like 600% sure 'ctx' stands for context
 // no 'inline' because it breaks with LLVM
 
@@ -22,6 +21,7 @@ LLVMTypeRef llvm_type_for(SorryType t, LLVMContextRef ctx) {
         case SORRY_BOOL: return LLVMInt1TypeInContext(ctx);
         case SORRY_STR:  return LLVMPointerType(LLVMInt8TypeInContext(ctx), 0);
         default:         return LLVMInt64TypeInContext(ctx); // SORRY_UNKNOWN defaults to i64
+                                                             // Default to NULL for explicit typing
     }
 }
 
@@ -37,7 +37,6 @@ LLVMValueRef gen_fdiv(LLVMBuilderRef b, LLVMValueRef lhs, LLVMValueRef rhs) { re
 LLVMValueRef codegen_visitor(ASTNode* node, LLVMBuilderRef bldr, LLVMContextRef ctx, SymbolTable* table) {
     if (!node) return NULL;
     switch (node->type) {
-
         case NODE_NUMBER:
             // val_type is set when a type keyword annotated the literal (e.g. `i64 2`, `f32 3.5`)
             // SORRY_UNKNOWN means fall back to what the literal looks like

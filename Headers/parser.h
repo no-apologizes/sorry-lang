@@ -61,7 +61,6 @@ ASTNode* build_ast(const char *input) {
                 break;
             }
 
-
             case TOKEN_IDENTIFIER: {
                 // Peek at next token to see if it's an =
                 const char* peek = input;
@@ -100,14 +99,6 @@ ASTNode* build_ast(const char *input) {
                 stack[++top] = n; // Push
                 break;
             }
-                /*
-            case TOKEN_TYPE: {
-                ASTNode* n = create_node(NODE_TYPE);
-                n->val_type = t.val_type;
-                stack[++top] = n;
-                break;
-            }
-            */
             case TOKEN_DROP: {
                 if (top < 0) { fprintf(stderr, "DROP on empty stack\n"); exit(EXIT_FAILURE); }
                 free_node(stack[top--]);
