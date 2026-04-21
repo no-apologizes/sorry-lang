@@ -39,6 +39,7 @@ int main(int argc, char **argv) {
     LLVMBuilderRef builder = LLVMCreateBuilderInContext(ctx);
 
     // Create main function wrapper in IR
+    // LLVMTypeRef main_type = LLVMFunctionType(LLVMDoubleTypeInContext(ctx), NULL, 0, 0);
     LLVMTypeRef main_type = LLVMFunctionType(LLVMInt64TypeInContext(ctx), NULL, 0, 0);
     LLVMValueRef main_func = LLVMAddFunction(mod, "main", main_type);
     LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlockInContext(ctx, main_func, "entry"));
@@ -50,7 +51,6 @@ int main(int argc, char **argv) {
     // Recursively walks tree and fills symbol table
     LLVMValueRef last_val = codegen_visitor(root, builder, ctx, &table);
 
-    // Return last evaluated value
     LLVMBuildRet(builder, last_val);
 
     // Print IR and disassemble
@@ -76,7 +76,14 @@ int main(int argc, char **argv) {
 
     // Run and print result
     LLVMGenericValueRef result = LLVMRunFunction(engine, main_func, 0, NULL);
-    printf("Actual output:\n\n%lld\n", (long long)LLVMGenericValueToInt(result, 1)); // Long long because result is a 64-bit integer
+
+    LLVMTypeKind last_kind = LLVMGetTypeKind(LLVMTypeOf(last_val));
+    if (last_kind == LLVMIntegerTypeKind) {
+        printf("Actual output:\n\n%lld\n", (long long)LLVMGenericValueToInt(result, 1)); // long long int, negative to positive nine quintillion, 64-bit int limit
+    } else {
+        double result_d = LLVMGenericValueToFloat(LLVMDoubleTypeInContext(ctx), result);
+        printf("Actual output:\n\n%g\n", result_d);
+    }
 
     // Free all resources
     LLVMDisposeGenericValue(result);

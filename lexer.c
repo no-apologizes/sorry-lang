@@ -10,11 +10,25 @@ Token get_next_token(const char **input) {
     if (**input == '\0') return TKN(TOKEN_EOF); // THIS LINE 'TKN(TOKEN_EOF)'
     // That's lowkey stupid, so I'll probably change that
 
-    if (isdigit(**input)) {
+    // Rewrote to make 0.1 not return an error or 1
+    // Handle 0.1 and .1 and make work
+    if (isdigit(**input) || (**input == '.' && isdigit(*(*input + 1)))) {
         Token t = {TOKEN_NUMBER, 0L}; // Default to 0
         while (isdigit(**input)) {
-            t.value = t.value * 10 + (**input - '0'); // The 10 is here because we are using a base-10-number system
-            (*input)++; // Consume the digit
+            t.value = t.value * 10 + (**input - '0');
+            (*input)++;
+        }
+        t.float_value = (double)t.value;
+        if (**input == '.') { // Multiply by 0.1, and then divide by 10 to make sure it's on the correct side of the decimal point
+            (*input)++;
+            double frac = 0.1;
+            while (isdigit(**input)) {
+                t.float_value += (**input - '0') * frac;
+                frac /= 10;
+                (*input)++;
+            }
+            t.is_float = true;
+            return t;
         }
         return t;
     }
@@ -26,6 +40,8 @@ Token get_next_token(const char **input) {
         while (isalnum(**input)) (*input)++; // Consume overflow chars without writing them
         t.name[i] = '\0';
         if      (strcmp(t.name, "i64")  == 0) { t.type = TOKEN_TYPE; t.val_type = SORRY_I64;  }
+        else if (strcmp(t.name, "f32")  == 0) { t.type = TOKEN_TYPE; t.val_type = SORRY_F32;  }
+        else if (strcmp(t.name, "f64")  == 0) { t.type = TOKEN_TYPE; t.val_type = SORRY_F64;  }
         else if (strcmp(t.name, "bool") == 0) { t.type = TOKEN_TYPE; t.val_type = SORRY_BOOL; }
         else if (strcmp(t.name, "str")  == 0) { t.type = TOKEN_TYPE; t.val_type = SORRY_STR;  }
         return t;
