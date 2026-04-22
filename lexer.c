@@ -55,8 +55,8 @@ Token get_next_token(const char **input) {
         case '/':  return TKN(TOKEN_DIV);
         case '=':  return TKN(TOKEN_EQUALS);
         case ';':  return TKN(TOKEN_DROP);
-        case '|':
-        case '\n': return TKN(TOKEN_TERM); // Why is the \n here?
+        case '|':  return TKN(TOKEN_TERM);
+        //case '\n': return TKN(TOKEN_TERM); // Why is the \n here?
         default:   return get_next_token(input); // Skip unknown chars instead of ending parse
     }
 }

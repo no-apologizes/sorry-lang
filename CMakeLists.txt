@@ -32,11 +32,6 @@ add_executable(
         sorry
         main.c
         lexer.c
-        Headers/parser.h
-        Headers/lexer.h
-        Headers/codegen.h
-        Headers/ast.h
-        Headers/symbol_table.h
 )
 
 target_compile_options(sorry PRIVATE ${LLVM_CFLAGS_LIST})

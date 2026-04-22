@@ -36,8 +36,8 @@ int main(int argc, char **argv) {
     LLVMBuilderRef builder = LLVMCreateBuilderInContext(ctx);
 
     // Create main function wrapper in IR
-    // LLVMTypeRef main_type = LLVMFunctionType(LLVMDoubleTypeInContext(ctx), NULL, 0, 0);
-    LLVMTypeRef main_type = LLVMFunctionType(LLVMInt64TypeInContext(ctx), NULL, 0, 0);
+    LLVMTypeRef main_type = LLVMFunctionType(LLVMDoubleTypeInContext(ctx), NULL, 0, 0);
+    //LLVMTypeRef main_type = LLVMFunctionType(LLVMInt64TypeInContext(ctx), NULL, 0, 0);
     LLVMValueRef main_func = LLVMAddFunction(mod, "main", main_type);
     LLVMPositionBuilderAtEnd(builder, LLVMAppendBasicBlockInContext(ctx, main_func, "entry"));
 
@@ -89,6 +89,7 @@ int main(int argc, char **argv) {
     LLVMDisposeExecutionEngine(engine); // also frees mod, engine owns mod now so allow it to dispose
     LLVMContextDispose(ctx);
     free_node(root);
-
+    free(table.vars);
+    
     return 0;
 }

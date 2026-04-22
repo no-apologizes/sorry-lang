@@ -84,49 +84,49 @@ LLVMValueRef codegen_visitor(ASTNode* node, LLVMBuilderRef bldr, LLVMContextRef 
         }
 
         case NODE_ASSIGN: {
-            if (node->left->type != NODE_IDENTIFIER) { fprintf(stderr, "Left side of = must be a variable\n"); exit(EXIT_FAILURE); }
+            if (node->left->type != NODE_IDENTIFIER) {
+                fprintf(stderr, "Left side of = must be a variable\n");
+                exit(EXIT_FAILURE);
+            }
             LLVMValueRef val = codegen_visitor(node->right, bldr, ctx, table);
-            if (!val) { fprintf(stderr, "Invalid value for assignment\n"); exit(EXIT_FAILURE); }
+            if (!val) {
+                fprintf(stderr, "Invalid value for assignment\n");
+                exit(EXIT_FAILURE);
+            }
 
             int idx = find_var(table, node->left->name);
             SorryType declared = node->left->val_type; // SORRY_UNKNOWN for bare `x =`
             LLVMTypeRef val_t  = LLVMTypeOf(val);
-            LLVMTypeRef llvm_t;
-            SorryType stype;
+            LLVMTypeRef llvm_t = llvm_type_for(declared, ctx);
 
             if (idx == -1) {
-                // New variable declaration
-                if (declared != SORRY_UNKNOWN) {
-                    // `i64 x = ...` — type is explicit, value must match exactly
-                    stype  = declared;
-                    llvm_t = llvm_type_for(stype, ctx);
-                    if (val_t != llvm_t) {
-                        fprintf(stderr, "Type mismatch: cannot assign %s value to declared %s variable '%s'\n",
-                            LLVMPrintTypeToString(val_t), LLVMPrintTypeToString(llvm_t), node->left->name);
-                        exit(EXIT_FAILURE);
-                    }
-                } else {
-                    // `x = ...` — infer type from what the value actually is
-                    llvm_t = val_t;
-                    LLVMTypeKind k = LLVMGetTypeKind(llvm_t);
-                    if      (k == LLVMFloatTypeKind)   stype = SORRY_F32;
-                    else if (k == LLVMDoubleTypeKind)  stype = SORRY_F64;
-                    else                               stype = SORRY_I64;
+                // New variable, enforce type keyword
+                if (declared == SORRY_UNKNOWN) {
+                    fprintf(stderr, "Type Error: Variable '%s' must be explicitly typed (e.g., 'i64 %s = ...')\n",
+                        node->left->name, node->left->name);
+                    exit(EXIT_FAILURE);
                 }
+
+                if (val_t != llvm_t) {
+                    fprintf(stderr, "Type Mismatch: Cannot assign %s to declared %s variable '%s'\n",
+                        LLVMPrintTypeToString(val_t), LLVMPrintTypeToString(llvm_t), node->left->name);
+                    exit(EXIT_FAILURE);
+                }
+
                 if (table->count >= 100) { fprintf(stderr, "Too many variables (max 100)\n"); exit(EXIT_FAILURE); }
                 idx = table->count;
+
                 LLVMValueRef ptr = LLVMBuildAlloca(bldr, llvm_t, node->left->name);
                 strcpy(table->vars[idx].name, node->left->name);
                 table->vars[idx].ptr  = ptr;
-                table->vars[idx].type = stype;
+                table->vars[idx].type = declared;
                 table->count++;
             } else {
                 // Re-assignment — type must match what the variable was declared as
-                stype  = table->vars[idx].type;
-                llvm_t = llvm_type_for(stype, ctx);
-                if (val_t != llvm_t) {
-                    fprintf(stderr, "Type mismatch: cannot assign %s value to %s variable '%s'\n",
-                        LLVMPrintTypeToString(val_t), LLVMPrintTypeToString(llvm_t), node->left->name);
+                LLVMTypeRef expected_t = llvm_type_for(table->vars[idx].type, ctx);
+                if (val_t != expected_t) {
+                    fprintf(stderr, "Type Mismatch: '%s' is %s, cannot assign %s\n",
+                            node->left->name, LLVMPrintTypeToString(expected_t), LLVMPrintTypeToString(val_t));
                     exit(EXIT_FAILURE);
                 }
             }
